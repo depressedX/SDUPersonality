@@ -100,7 +100,6 @@ createjs.Text.prototype._drawText = function (ctx, o, lines) {
         if (this.lineWidth != null && (w = ctx.measureText(str).width) > this.lineWidth) {
             // text wrapping:
             var words = chineseMixedSplit(str);
-            console.log(words)
             str = words[0];
             w = ctx.measureText(str).width;
 
@@ -117,6 +116,7 @@ createjs.Text.prototype._drawText = function (ctx, o, lines) {
                     if (w > maxW) {
                         maxW = w;
                     }
+                    console.log(str)
                     str = words[j];
                     w = ctx.measureText(str).width;
                     count++;
