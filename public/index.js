@@ -1749,7 +1749,7 @@ p.nominalBounds = new cjs.Rectangle(0,0,229,70);
 		1. 在以下"// 开始您的自定义代码"行后的新行上添加您的自定义代码。
 		单击此元件实例时，此代码将执行。
 		*/
-		
+		window.test = this;
 		this.stop();
 		this.button_1.addEventListener("click", fl_MouseClickHandler.bind(this));
 		
@@ -1789,7 +1789,7 @@ p.nominalBounds = new cjs.Rectangle(0,0,229,70);
 		let result = PersonalityTester.getTestingResult()
 		this.resultText.text.set({
 		    text: result.name + '\n' + result.description,
-		    lineWidth: this.stage.canvas.width
+		    lineWidth: 375
 		
 		}); 
 		this.stop()
