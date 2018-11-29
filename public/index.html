@@ -14,12 +14,145 @@
     <title>index</title>
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <style>
+        @font-face {
+            font-family: HYWenHei;
+            src: url('./font/HYWenHei-35W.ttf')
+        }
+        body {
+            font-family: HYWenHei;
+        }
         .user-info {
             position: fixed;
-            left: 50%;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+            background: #bbdadc url("./private_images/bg.jpg");
+            background-size: cover;
+        }
+        .user-info__form {
+            position: absolute;
             top: 50%;
-            background-color: aqua;
-            transform: translate(-50%, -50%);
+            width: 100%;
+            left: 0;
+            bottom: 10%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-around;
+        }
+        /*姓名*/
+        .user-info__form .name-input-container {
+            background-image: url("./private_images/name_input.png");
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center center;
+            width: 10em;
+            height: 3em;
+            position: relative;
+        }
+        .user-info__form .name-input {
+            text-align: center;
+            padding: 0;
+            border: 0;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 94%;
+            height: 94%;
+            font-size: 1.3em;
+            left: .4em;
+            background-color: transparent;
+            font-family: HYWenHei;
+        }
+        .user-info__form .name-input:focus {
+            outline: none;
+        }
+        /*性别*/
+        .user-info__form .sex-row {
+            margin: 20px 0;
+            flex-shrink: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            width: 100%;
+            padding: 0 15%;
+            box-sizing: border-box;
+        }
+        .sex-option {
+            display: inline-block;
+            border: 5px solid #48170c;
+            border-radius: 3px;
+            background-color: white;
+            text-align: center;
+            width: 40%;
+        }
+        .sex-option.active {
+            background-color: #fff09d;
+            transform: scale(1.05);
+            /*box-shadow: 5px 5px 5px rgba(50,50,50,.5);*/
+        }
+        .sex-option .sex-option_img {
+            height: 80%;
+            position: relative;
+            top: 10%;
+        }
+        /*提交按钮*/
+        .bottom-row {
+            width: 100%;
+            padding: 0 10%;
+            box-sizing: border-box;
+            position: relative;
+            text-align: center;
+        }
+        .user-info__form .submit-button {
+            border-radius: 3px;
+            border: 2px dashed black;
+            color: #62382f;
+            font-size: 1.3em;
+            background-color: #fff09d;
+            line-height: 1;
+            padding: .5em 1em;
+            letter-spacing: 5px;
+            box-shadow: 5px 5px 5px rgba(50, 50, 50, .5);
+        }
+        .user-info__form .submit-button.hidden {
+            visibility: hidden;
+        }
+        .user-info__form .submit-button:hover {
+            box-shadow: 3px 3px 5px rgba(50, 50, 50, .5);
+            position: relative;
+            top: 2px;
+        }
+        /*进度条*/
+        .progress-bar {
+            position: absolute;
+            left: 15%;
+            top: 0;
+            width: 70%;
+            height: 100%;
+            background-color: #918859;
+        }
+        .inner-bar {
+            width: 50%;
+            height: 100%;
+            background-color: #fff09d;
+            border-radius: 5px;
+            background-color: #c7bb7b;
+            background-size: 3em 3em;
+            background-image: linear-gradient(-45deg, transparent 0em, transparent 0.8em, #fff09d 0.9em, #fff09d 2.1em, transparent 2.1em, transparent 2.9em, #fff09d 3.1em);
+            animation: warning-animation 750ms infinite linear;
+        }
+        .progress-bar.hidden {
+            visibility: hidden;
+        }
+        @keyframes warning-animation {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 3em 0;
+            }
         }
     </style>
     <!-- write your code here -->
@@ -32,9 +165,11 @@
   }
 </style>
 <script src="https://code.createjs.com/createjs-2015.11.26.min.js"></script>
-<script src="index.js"></script>
+<script src="index.js?1543473330675"></script>
+<script type='text/javascript' src='libs/polyfill.js'></script>
 <script type='text/javascript' src='libs/PersonalityTester.js'></script>
 <script type='text/javascript' src='libs/util.js'></script>
+<script type='text/javascript' src='libs/globalEventEmitter.js'></script>
     <script>
     var canvas, stage, exportRoot, anim_container, dom_overlay_container, fnStartAnimation;
     function init() {
@@ -46,6 +181,13 @@
 	var loader = new createjs.LoadQueue(false);
 	loader.addEventListener("fileload", function(evt){handleFileLoad(evt,comp)});
 	loader.addEventListener("complete", function(evt){handleComplete(evt,comp)});
+    //添加progress监听器
+    loader.addEventListener("progress",function(e){
+    //触发Bus progress事件
+    Bus.emit('animationloadprogress',e.progress)
+    })
+    //添加complete监听器
+    //！！！注意 这个监听器不应该在这里添加 因为实际的逻辑是第一帧加载后才添加
 	var lib=comp.getLibrary();
 	loader.loadManifest(lib.properties.manifest);
     }
@@ -68,7 +210,32 @@ function handleComplete(evt,comp) {
     fnStartAnimation = function() {
 		stage.addChild(exportRoot);
 		createjs.Ticker.setFPS(lib.properties.fps);
-		createjs.Ticker.addEventListener("tick", stage);
+		createjs.Ticker.addEventListener("tick", stage)
+		stage.addEventListener("tick", handleTick)
+		function handleTick(event) {
+			var cameraInstance = exportRoot.___camera___instance;
+			if(cameraInstance)
+			{
+				var stageCenter = { 'x' : lib.properties.width/2, 'y' : lib.properties.height/2 };
+				if(cameraInstance._off != null && cameraInstance._off == true)
+					exportRoot.transformMatrix = new createjs.Matrix2D();
+				else
+				{
+					if(cameraInstance.pinToObject !== undefined)
+					{
+						cameraInstance.x = cameraInstance.pinToObject.x + cameraInstance.pinToObject.pinOffsetX;
+						cameraInstance.y = cameraInstance.pinToObject.y + cameraInstance.pinToObject.pinOffsetY;
+					}
+					var mat = cameraInstance.getMatrix();
+					mat.tx -= stageCenter.x;
+					mat.ty -= stageCenter.y;
+					var inverseMat = mat.invert();
+					inverseMat.prependTransform(stageCenter.x, stageCenter.y, 1, 1, 0, 0, 0, 0, 0);
+					inverseMat.appendTransform(-stageCenter.x, -stageCenter.y, 1, 1, 0, 0, 0, 0, 0);
+					exportRoot.transformMatrix = inverseMat;
+				}
+			}
+		}
 	}
     //Code to support hidpi screens and responsive scaling.
 	function makeResponsive(isResp, respDim, isScale, scaleType) {		
@@ -122,15 +289,77 @@ function handleComplete(evt,comp) {
     </div>
 </div>
 <div class="user-info" id="user-info">
-    <form id="user-info__form">
-        <label>姓名</label>
-        <input type="text" id="user-info__name">
-        <br>
-        <label>性别</label>
-        <input type="radio" name="sex" value="0" id="user-info__male" required="required">
-        <input type="radio" name="sex" value="1" id="user-info__female" required="required">
-        <button id="user-info__submit">确认</button>
+    <form class="user-info__form" id="user-info__form">
+        <div class="name-input-container">
+            <input placeholder="请输入姓名" type="text" id="user-info__name" class="name-input" required="required">
+        </div>
+        <div class="sex-row">
+            <div class="sex-option active">
+                <input hidden type="radio" name="sex" value="0" id="user-info__male" checked>
+                <img class="sex-option_img" src="private_images/sex_male.png">
+            </div>
+            <div class="sex-option">
+                <input hidden type="radio" name="sex" value="1" id="user-info__female">
+                <img class="sex-option_img" src="private_images/sex_female.png">
+            </div>
+        </div>
+        <!--底部一行 主要放置submit按钮 进度条-->
+        <div class="bottom-row">
+            <button id="user-info__submit" class="submit-button hidden">开始测试</button>
+            <div class="progress-bar">
+                <div class="inner-bar"></div>
+            </div>
+        </div>
     </form>
-</div>
+    <script>
+        // 绑定表单各种事件
+        let sexOptions = Array.from(document.querySelectorAll('.sex-row .sex-option'))
+        sexOptions.forEach(function (sexOption) {
+            sexOption.addEventListener('click', function () {
+                sexOptions.forEach(function (so) {
+                    if (so === sexOption) {
+                        so.classList.add('active')
+                        so.querySelector('input').checked = true
+                    } else {
+                        so.classList.remove('active')
+                    }
+                })
+            })
+        })
+        // 动画加载完毕后 绑定提交按钮事件
+        Bus.on('animationloadcomplete', () => {
+            // 此时按照流程逻辑应该已经有个AnimationPlay对象
+            function submitUserInfo() {
+                let formDom = document.getElementById('user-info__form'),
+                    nameDom = document.getElementById('user-info__name')
+                let validityPass = formDom.reportValidity()
+                if (validityPass) {
+                    PersonalityTester.updateUserInfo(nameDom.value,
+                        sexOptions.find(function (v) {
+                            return v.classList.contains('active')
+                        }).querySelector('input').value === '0' ? '男' : '女')
+                }
+                return validityPass
+            }
+            let submitButton = document.getElementById('user-info__submit')
+            let progressBar = document.querySelector('.progress-bar')
+            let innerBar = document.querySelector('.inner-bar')
+            // 绑定点击事件
+            submitButton.addEventListener('click', (e) => {
+                e.preventDefault()
+                let submitRes = submitUserInfo()
+                if (submitRes) {
+                    // 开始播放
+                    document.getElementById('user-info').style.display = 'none'
+                    AnimationPlayer.play()
+                } else {
+                    // 继续等待填写
+                }
+            })
+            // 显示提交按钮 隐藏进度条
+            submitButton.classList.remove('hidden')
+            progressBar.classList.add('hidden')
+        })
+    </script>
 </body>
 </html>
