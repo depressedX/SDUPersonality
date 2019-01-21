@@ -13,16 +13,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="authoring-tool" content="$VERSION">
-    <title>$TITLE</title>
+    <title>测测你的山大型人格</title>
+    <link rel="icon" href="./icon.png"/>
+    <meta itemprop="image" content="./icon.png"/>
+    <meta name="description" itemprop="description" content="山大人专属的人格测试应用~">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <!--起始页-->
     <style>
-        @font-face {
-            font-family: HYWenHei;
-            src: url('./font/HYWenHei-35W.ttf')
+        /*布局*/
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: space-between;
         }
 
-        body {
-            font-family: HYWenHei;
+        .user-info .banner {
+            object-fit: contain;
+            flex-grow: 1;
+            flex-shrink: 1;
+            background-repeat: no-repeat;
+            background-image: url("./private_images/banner.png");
+            background-size: contain;
+            background-position: center center;
+        }
+
+        .user-info .user-info__form {
+            flex-shrink: 0;
+            height: 275px;
         }
 
         .user-info {
@@ -31,16 +49,17 @@
             height: 100%;
             left: 0;
             top: 0;
-            background: #bbdadc url("./private_images/bg.jpg");
-            background-size: cover;
+            background-color: #bbdadc;
+        }
+
+        .banner-container .banner {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         .user-info__form {
-            position: absolute;
-            top: 50%;
             width: 100%;
-            left: 0;
-            bottom: 10%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -70,7 +89,6 @@
             font-size: 1.3em;
             left: .4em;
             background-color: transparent;
-            font-family: HYWenHei;
         }
 
         .user-info__form .name-input:focus {
@@ -96,6 +114,7 @@
             background-color: white;
             text-align: center;
             width: 40%;
+            height: 100px;
         }
 
         .sex-option.active {
@@ -108,6 +127,8 @@
             height: 80%;
             position: relative;
             top: 10%;
+            width: 80%;
+            object-fit: contain;
         }
 
         /*提交按钮*/
@@ -128,7 +149,6 @@
             line-height: 1;
             padding: .5em 1em;
             letter-spacing: 5px;
-
             box-shadow: 5px 5px 5px rgba(50, 50, 50, .5);
         }
 
@@ -153,7 +173,7 @@
         }
 
         .inner-bar {
-            width: 50%;
+            width: 0%;
             height: 100%;
             background-color: #fff09d;
             border-radius: 5px;
@@ -161,7 +181,6 @@
             background-size: 3em 3em;
             background-image: linear-gradient(-45deg, transparent 0em, transparent 0.8em, #fff09d 0.9em, #fff09d 2.1em, transparent 2.1em, transparent 2.9em, #fff09d 3.1em);
             animation: warning-animation 750ms infinite linear;
-
         }
 
         .progress-bar.hidden {
@@ -177,10 +196,22 @@
             }
         }
 
+        .user-info .logo-container {
+            padding: 1em .3em;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .logo-container img.logo {
+            width: 70px;
+            height: 30px;
+            object-fit: contain;
+            margin: 0 10px;
+        }
     </style>
     <!-- write your code here -->
     $CENTER_STYLE
-    $CREATEJS_LIBRARY_SCRIPTS
+    <script type='text/javascript' src='libs/createjs.min.js'></script>
     $ANIMATE_CC_SCRIPTS
     $SCRIPT_START
     var canvas, stage, exportRoot, anim_container, dom_overlay_container, fnStartAnimation;
@@ -214,6 +245,8 @@
     $PLAYSOUND
     $SCRIPT_END
     <!-- write your code here -->
+    <!--预加载专属海报背景图片-->
+    <link href="personalities/poster_bg.png" rel="prefetch">
 </head>
 
 <body onload="init();" style="margin:0px;">
@@ -227,7 +260,7 @@
 $PRELOADER_DIV
 
 <div class="user-info" id="user-info">
-
+    <div class="banner"></div>
     <form class="user-info__form" id="user-info__form">
         <div class="name-input-container">
             <input placeholder="请输入姓名" type="text" id="user-info__name" class="name-input" required="required">
@@ -251,8 +284,16 @@ $PRELOADER_DIV
         </div>
     </form>
     <script>
-        // 绑定表单各种事件
+        let submitButton = document.getElementById('user-info__submit')
+        let progressBar = document.querySelector('.progress-bar')
+        let innerBar = document.querySelector('.inner-bar')
         let sexOptions = Array.from(document.querySelectorAll('.sex-row .sex-option'))
+
+        let formDom = document.getElementById('user-info__form'),
+            nameDom = document.getElementById('user-info__name')
+
+
+        // 绑定表单各种事件
         sexOptions.forEach(function (sexOption) {
             sexOption.addEventListener('click', function () {
                 sexOptions.forEach(function (so) {
@@ -266,12 +307,16 @@ $PRELOADER_DIV
             })
         })
 
+
+        // 动画加载时改变进度条
+        Bus.on('animationloadprogress', p => {
+            innerBar.style.width = p * 100 + '%'
+        })
+
         // 动画加载完毕后 绑定提交按钮事件
         Bus.on('animationloadcomplete', () => {
             // 此时按照流程逻辑应该已经有个AnimationPlay对象
             function submitUserInfo() {
-                let formDom = document.getElementById('user-info__form'),
-                    nameDom = document.getElementById('user-info__name')
 
                 let validityPass = formDom.reportValidity()
                 if (validityPass) {
@@ -283,9 +328,6 @@ $PRELOADER_DIV
                 return validityPass
             }
 
-            let submitButton = document.getElementById('user-info__submit')
-            let progressBar = document.querySelector('.progress-bar')
-            let innerBar = document.querySelector('.inner-bar')
 
             // 绑定点击事件
             submitButton.addEventListener('click', (e) => {
@@ -308,5 +350,13 @@ $PRELOADER_DIV
 
         })
     </script>
+    <div class="logo-container">
+        <div id="egg"></div>
+        <img class="logo" src="private_images/logo1.png"/>
+        <img class="logo" src="private_images/logo2.png"/>
+        <script>
+            window.bindEasterEgg(document.getElementById('egg'))
+        </script>
+    </div>
 </body>
 </html>

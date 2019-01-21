@@ -1,0 +1,5 @@
+require('./globalEventEmitter')
+require('./PersonalityTester')
+require('./polyfill')
+require('./util')
+require('./egg')

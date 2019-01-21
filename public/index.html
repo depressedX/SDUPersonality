@@ -11,15 +11,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="authoring-tool" content="Adobe_Animate_CC">
-    <title>index</title>
+    <title>测测你的山大型人格</title>
+    <link rel="icon" href="./icon.png"/>
+    <meta itemprop="image" content="./icon.png"/>
+    <meta name="description" itemprop="description" content="山大人专属的人格测试应用~">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <!--起始页-->
     <style>
-        @font-face {
-            font-family: HYWenHei;
-            src: url('./font/HYWenHei-35W.ttf')
+        /*布局*/
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: space-between;
         }
-        body {
-            font-family: HYWenHei;
+        .user-info .banner {
+            object-fit: contain;
+            flex-grow: 1;
+            flex-shrink: 1;
+            background-repeat: no-repeat;
+            background-image: url("./private_images/banner.png");
+            background-size: contain;
+            background-position: center center;
+        }
+        .user-info .user-info__form {
+            flex-shrink: 0;
+            height: 275px;
         }
         .user-info {
             position: fixed;
@@ -27,15 +44,15 @@
             height: 100%;
             left: 0;
             top: 0;
-            background: #bbdadc url("./private_images/bg.jpg");
-            background-size: cover;
+            background-color: #bbdadc;
+        }
+        .banner-container .banner {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
         .user-info__form {
-            position: absolute;
-            top: 50%;
             width: 100%;
-            left: 0;
-            bottom: 10%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -63,7 +80,6 @@
             font-size: 1.3em;
             left: .4em;
             background-color: transparent;
-            font-family: HYWenHei;
         }
         .user-info__form .name-input:focus {
             outline: none;
@@ -86,6 +102,7 @@
             background-color: white;
             text-align: center;
             width: 40%;
+            height: 100px;
         }
         .sex-option.active {
             background-color: #fff09d;
@@ -96,6 +113,8 @@
             height: 80%;
             position: relative;
             top: 10%;
+            width: 80%;
+            object-fit: contain;
         }
         /*提交按钮*/
         .bottom-row {
@@ -134,7 +153,7 @@
             background-color: #918859;
         }
         .inner-bar {
-            width: 50%;
+            width: 0%;
             height: 100%;
             background-color: #fff09d;
             border-radius: 5px;
@@ -154,6 +173,17 @@
                 background-position: 3em 0;
             }
         }
+        .user-info .logo-container {
+            padding: 1em .3em;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .logo-container img.logo {
+            width: 70px;
+            height: 30px;
+            object-fit: contain;
+            margin: 0 10px;
+        }
     </style>
     <!-- write your code here -->
     <style>
@@ -164,12 +194,9 @@
 	top:0;bottom:0;
   }
 </style>
-<script src="https://code.createjs.com/createjs-2015.11.26.min.js"></script>
-<script src="index.js?1543473330675"></script>
-<script type='text/javascript' src='libs/polyfill.js'></script>
-<script type='text/javascript' src='libs/PersonalityTester.js'></script>
-<script type='text/javascript' src='libs/util.js'></script>
-<script type='text/javascript' src='libs/globalEventEmitter.js'></script>
+    <script type='text/javascript' src='libs/createjs.min.js'></script>
+<script src="index.js"></script>
+<script type='text/javascript' src='libs/main.js'></script>
     <script>
     var canvas, stage, exportRoot, anim_container, dom_overlay_container, fnStartAnimation;
     function init() {
@@ -205,7 +232,6 @@ function handleComplete(evt,comp) {
 	}
 	exportRoot = new lib.无标题1();
 	stage = new lib.Stage(canvas);
-	stage.enableMouseOver();
     //Registers the "tick" event listener.
     fnStartAnimation = function() {
 		stage.addChild(exportRoot);
@@ -279,6 +305,8 @@ function handleComplete(evt,comp) {
 }
     </script>
     <!-- write your code here -->
+    <!--预加载专属海报背景图片-->
+    <link href="personalities/poster_bg.png" rel="prefetch">
 </head>
 <body onload="init();" style="margin:0px;">
 <div id="animation_container" style="background-color:rgba(255, 255, 255, 1.00); width:375px; height:667px">
@@ -289,6 +317,7 @@ function handleComplete(evt,comp) {
     </div>
 </div>
 <div class="user-info" id="user-info">
+    <div class="banner"></div>
     <form class="user-info__form" id="user-info__form">
         <div class="name-input-container">
             <input placeholder="请输入姓名" type="text" id="user-info__name" class="name-input" required="required">
@@ -312,8 +341,13 @@ function handleComplete(evt,comp) {
         </div>
     </form>
     <script>
-        // 绑定表单各种事件
+        let submitButton = document.getElementById('user-info__submit')
+        let progressBar = document.querySelector('.progress-bar')
+        let innerBar = document.querySelector('.inner-bar')
         let sexOptions = Array.from(document.querySelectorAll('.sex-row .sex-option'))
+        let formDom = document.getElementById('user-info__form'),
+            nameDom = document.getElementById('user-info__name')
+        // 绑定表单各种事件
         sexOptions.forEach(function (sexOption) {
             sexOption.addEventListener('click', function () {
                 sexOptions.forEach(function (so) {
@@ -326,12 +360,14 @@ function handleComplete(evt,comp) {
                 })
             })
         })
+        // 动画加载时改变进度条
+        Bus.on('animationloadprogress', p => {
+            innerBar.style.width = p * 100 + '%'
+        })
         // 动画加载完毕后 绑定提交按钮事件
         Bus.on('animationloadcomplete', () => {
             // 此时按照流程逻辑应该已经有个AnimationPlay对象
             function submitUserInfo() {
-                let formDom = document.getElementById('user-info__form'),
-                    nameDom = document.getElementById('user-info__name')
                 let validityPass = formDom.reportValidity()
                 if (validityPass) {
                     PersonalityTester.updateUserInfo(nameDom.value,
@@ -341,9 +377,6 @@ function handleComplete(evt,comp) {
                 }
                 return validityPass
             }
-            let submitButton = document.getElementById('user-info__submit')
-            let progressBar = document.querySelector('.progress-bar')
-            let innerBar = document.querySelector('.inner-bar')
             // 绑定点击事件
             submitButton.addEventListener('click', (e) => {
                 e.preventDefault()
@@ -361,5 +394,13 @@ function handleComplete(evt,comp) {
             progressBar.classList.add('hidden')
         })
     </script>
+    <div class="logo-container">
+        <div id="egg"></div>
+        <img class="logo" src="private_images/logo1.png"/>
+        <img class="logo" src="private_images/logo2.png"/>
+        <script>
+            window.bindEasterEgg(document.getElementById('egg'))
+        </script>
+    </div>
 </body>
 </html>
