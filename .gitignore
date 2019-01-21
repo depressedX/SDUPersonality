@@ -9,3 +9,5 @@
 out
 gen
 ~$H5 脚本.doc
+/script_bundler/node_modules/
+/script_bundler/.idea/
